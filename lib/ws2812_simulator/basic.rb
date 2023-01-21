@@ -25,6 +25,7 @@ module Ws2812Simulator
 			@leds = Ws2811_t.new
 			@leds.freq = freq
 			@leds.dmanum = dma
+			@leds.display_options = options.fetch(:display_options) { {} }
 
 			@channel = ws2811_channel_get(@leds, channel)
 			@channel.count = num

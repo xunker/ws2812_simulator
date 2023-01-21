@@ -2,10 +2,12 @@ class Ws2812Simulator::Basic
   class Ws2811_t
     attr_accessor :freq, :dmanum
     attr_reader :count, :display_pid
+    attr_accessor :display_options
     
     def initialize
       # array of all the current LED values
-      @leds = []  
+      @leds = []
+      @display_options = {}
     end
 
     def count=(val)
@@ -22,7 +24,7 @@ class Ws2812Simulator::Basic
       return if @display_pid
       
       @display_pid = fork do
-        display = Ws2812Simulator::Display.new(count: count)
+        display = Ws2812Simulator::Display.new(count: count, arrangement: @display_options[:arrangement], include_labels: @display_options[:include_labels])
         display.show
       end
     end

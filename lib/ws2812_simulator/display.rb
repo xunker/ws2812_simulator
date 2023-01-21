@@ -42,6 +42,7 @@ module Ws2812Simulator
       @count = count
       @update_leds = false
       @arrangement = arrangement
+      @include_labels = include_labels
 
       @window = Ruby2D::Window.new
       window.set(
@@ -86,63 +87,63 @@ module Ws2812Simulator
     end
 
     def set_count(val)
-    return if val == @count
+      return if val == @count
 
-    if @leds
-      @leds.each do |led|
-        @window.remove(led.obj)
-        @window.remove(led.text) if led.text
-      end
-    end
-
-    @count = val
-    set_leds
-  end
-
-  def set_leds
-    leds_per_row =  Math.sqrt(count).ceil
-    leds_per_column =  Math.sqrt(count).floor
-
-    led_d = [window.width / leds_per_row, window.height / leds_per_column].min
-
-    width_per_led = window.width / leds_per_row
-    height_per_led = window.height / leds_per_column
-
-    @leds = []
-    leds_per_column.times do |col_idx|
-      leds_per_row.times do |row_idx|
-        next if @leds.length >= count
-
-
-        led_x_pos = (row_idx * width_per_led) + (width_per_led/2)
-        if (arrangement == :unicorn_hat) && (col_idx % 2 == 0)
-          # reverse direction on this row to emulate unicorn hat
-          led_x_pos = window.width - led_x_pos
+      if @leds
+        @leds.each do |led|
+          @window.remove(led.obj)
+          @window.remove(led.text) if led.text
         end
-        
-        @leds << Led.new(
-          self,
-          @leds.length,
-          Ruby2D::Circle.new(
-            x: led_x_pos,
-            y: (col_idx * height_per_led) + (led_d/2),
-            radius: (led_d/2) * 0.9
-          ),
-          @include_labels ? Ruby2D::Text.new(
-            @leds.length,
-            x: led_x_pos,
-            y: (col_idx * height_per_led) + (led_d/2),
-            size: 10
-          ) : nil
-        )
       end
+
+      @count = val
+      set_leds
     end
 
-    @leds.each do |led|
-      window.add(led.obj)
-      window.add(led.text) if led.text
+    def set_leds
+      leds_per_row =  Math.sqrt(count).ceil
+      leds_per_column =  Math.sqrt(count).floor
+
+      led_d = [window.width / leds_per_row, window.height / leds_per_column].min
+
+      width_per_led = window.width / leds_per_row
+      height_per_led = window.height / leds_per_column
+
+      @leds = []
+      leds_per_column.times do |col_idx|
+        leds_per_row.times do |row_idx|
+          next if @leds.length >= count
+
+
+          led_x_pos = (row_idx * width_per_led) + (width_per_led/2)
+          if (arrangement == :unicorn_hat) && (col_idx % 2 == 0)
+            # reverse direction on this row to emulate unicorn hat
+            led_x_pos = window.width - led_x_pos
+          end
+          
+          @leds << Led.new(
+            self,
+            @leds.length,
+            Ruby2D::Circle.new(
+              x: led_x_pos,
+              y: (col_idx * height_per_led) + (led_d/2),
+              radius: (led_d/2) * 0.9
+            ),
+            @include_labels ? Ruby2D::Text.new(
+              @leds.length,
+              x: led_x_pos,
+              y: (col_idx * height_per_led) + (led_d/2),
+              size: 10
+            ) : nil
+          )
+        end
+      end
+
+      @leds.each do |led|
+        window.add(led.obj)
+        window.add(led.text) if led.text
+      end
     end
-  end
 
     def update_leds
       @leds.each do |led|

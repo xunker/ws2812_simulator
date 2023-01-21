@@ -64,7 +64,21 @@ module Ws2812Simulator
         end
       end
 
+      server_channel = Cod.tcp_server('localhost:4444')
+
       window.update do
+        (request, client_channel) = server_channel.get_ext
+        puts 'x'*100
+        puts request.inspect
+
+        if request.first == :led
+          color = request.last
+          @leds[request[1]].set_color(r: color.r, g: color.g, b: color.b)
+        end
+
+        client_channel.put 'OK'
+        # client_channel.close
+
         if leds_dirty?
           update_leds
         end

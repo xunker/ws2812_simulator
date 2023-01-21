@@ -1,7 +1,7 @@
 class Ws2812Simulator::Basic
   class Ws2811_t
     attr_accessor :freq, :dmanum
-    attr_reader :count, :display
+    attr_reader :count, :display_pid
     
     def initialize
       # array of all the current LED values
@@ -19,8 +19,16 @@ class Ws2812Simulator::Basic
     end
 
     def start_display!
-      return if @display
-      @display = Ws2812Simulator::Display.new(count: count).show
+      return if @display_pid
+      
+      @display_pid = fork do
+        display = Ws2812Simulator::Display.new(count: count)
+        display.show
+      end
+    end
+
+    def stop_display!
+      Process.kill(:TERM, @display_pid) if @display_pid
     end
   end
 
@@ -44,6 +52,8 @@ class Ws2812Simulator::Basic
   module Simulations
     # returns 0 (success) or non-zero (error)
     def ws2811_init(leds_obj)
+      leds.start_display!
+      @display_chan = Cod.tcp('localhost:4444')
       0
     end
 
@@ -51,16 +61,18 @@ class Ws2812Simulator::Basic
       SimulatedChannel.new(leds_obj, channel_number)
     end
     
-    def ws2811_led_set(_channel, index, color_int)
-      puts "ws2811_led_set(#{_channel.class}, #{index.inspect}, #{Ws2812Simulator::Color.from_i(color_int).inspect})"
+    def ws2811_led_set(channel, index, color_int)
+      puts "ws2811_led_set(#{channel.class}, #{index.inspect}, #{Ws2812Simulator::Color.from_i(color_int).inspect})"
+      # channel.leds.start_display!
+      
+      setter = @display_chan.interact([:led, index, Ws2812Simulator::Color.from_i(color_int)])
     end
     
     def ws2811_render(leds_obj)
-      puts "ws2811_render(#{leds_obj.inspect})"
-      # if !leds_obj.display
-      #   leds_obj.start_display!
-      # end
-
+      # puts "ws2811_render(#{leds_obj.inspect})"
+      
+      leds_obj.start_display!
+      
       0 # everything OK
     end
     
@@ -73,7 +85,7 @@ class Ws2812Simulator::Basic
     # Shut down DMA, PWM, and cleanup memory.
     # void ws2811_fini(ws2811_t *ws2811)
     def ws2811_fini(leds_obj)
-      # no-op for now
+      leds_obj.stop_display!
     end
   end
 end

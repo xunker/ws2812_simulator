@@ -56,7 +56,6 @@ module Ws2812Simulator
       set_leds
     
       window.on :key do |e|
-        # puts e
         if e.type == :down
           case e.key
           when 'q'
@@ -69,8 +68,6 @@ module Ws2812Simulator
 
       window.update do
         (request, client_channel) = server_channel.get_ext
-        puts 'x'*100
-        puts request.inspect
 
         if request.first == :led
           color = request.last

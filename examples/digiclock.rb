@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 $:.unshift(File.expand_path('../../lib', __FILE__))
-require 'ws2812_simulator'
+require 'ws2812_simulator/drop_in_replacement'
 
 # Single 3x5 pixels "digit" (think 7-segment display)
 class Digit

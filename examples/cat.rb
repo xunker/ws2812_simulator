@@ -4,7 +4,7 @@
 # Source: https://gist.github.com/LimeBlast/74db06b0123fa70ba6d2
 #
 $:.unshift(File.expand_path('../../lib', __FILE__))
-require 'ws2812_simulator'
+require 'ws2812_simulator/drop_in_replacement'
 
 def display(array, colours)
   $hat.clear false

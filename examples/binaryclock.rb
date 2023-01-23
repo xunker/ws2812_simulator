@@ -1,11 +1,11 @@
 #!/usr/bin/env ruby
 $:.unshift(File.expand_path('../../lib', __FILE__))
-require 'ws2812_simulator'
+require 'ws2812_simulator/drop_in_replacement'
 
 # Single 1x4 pixels binary "digit"
 class BinaryDigit
 	def initialize(hat, x, y, color, off_color = nil)
-		off_color ||= Ws2812Simulator::Color.new(0, 0, 0)
+		off_color ||= Ws2812::Color.new(0, 0, 0)
 		@hat, @x, @y, @color, @off_color = hat, x, y, color, off_color
 	end
 	attr_reader :hat
@@ -103,13 +103,13 @@ end
 
 if __FILE__ == $0
 	# Init
-	hat = Ws2812Simulator::UnicornHAT.new
+	hat = Ws2812::UnicornHAT.new
 	hat.rotation = 180
 	hat.brightness = 20
 
-	frame = Ws2812Simulator::Color.new(0x00, 0x00, 0x66)
-	red = Ws2812Simulator::Color.new(0xff, 0, 0)
-	green = Ws2812Simulator::Color.new(0, 0xff, 0)
+	frame = Ws2812::Color.new(0x00, 0x00, 0x66)
+	red = Ws2812::Color.new(0xff, 0, 0)
+	green = Ws2812::Color.new(0, 0xff, 0)
 	if true
 		# Calendar + Clock
 		calendar = BinaryCalendar.new(hat, 0, 0, green)

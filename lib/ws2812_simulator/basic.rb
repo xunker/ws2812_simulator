@@ -22,7 +22,7 @@ module Ws2812Simulator
 			invert = options.fetch(:invert) { false }
 			channel = options.fetch(:channel) { 0 }
 
-			@leds = Ws2811_t.new
+			@leds = Ws2812Simulator::Simulations::Ws2811_t.new
 			@leds.freq = freq
 			@leds.dmanum = dma
 			@leds.display_options = options.fetch(:display_options) { {} }

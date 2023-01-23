@@ -3,6 +3,7 @@ class Ws2812Simulator::Basic
     attr_accessor :freq, :dmanum
     attr_reader :count, :display_pid
     attr_accessor :display_options
+    attr_accessor :ipc_pipe
     
     def initialize
       # array of all the current LED values
@@ -37,10 +38,17 @@ class Ws2812Simulator::Basic
         $ ruby <.rb file path>
         "
       end
+
+      @ipc_pipe = { from_display: Cod.pipe, to_display:  Cod.pipe }
       
       @display_pid = fork do
-        display = Ws2812Simulator::Display.new(count: count, arrangement: @display_options[:arrangement], include_labels: @display_options[:include_labels])
+        display = Ws2812Simulator::Display.new(count: count, arrangement: @display_options[:arrangement], include_labels: @display_options[:include_labels], ipc_pipe: @ipc_pipe)
         display.show
+      end
+
+      display_message = ''
+      until (display_message = @ipc_pipe[:from_display].get) == Ws2812Simulator::Display::STARTED_MESSAGE
+        puts 'waiting for display to start...'
       end
     end
 
@@ -70,7 +78,6 @@ class Ws2812Simulator::Basic
     # returns 0 (success) or non-zero (error)
     def ws2811_init(leds_obj)
       leds.start_display!
-      @display_chan = Cod.tcp('localhost:4444')
       0
     end
 
@@ -80,9 +87,8 @@ class Ws2812Simulator::Basic
     
     def ws2811_led_set(channel, index, color_int)
       # puts "ws2811_led_set(#{channel.class}, #{index.inspect}, #{Ws2812Simulator::Color.from_i(color_int).inspect})"
-      # channel.leds.start_display!
       
-      setter = @display_chan.interact([:led, index, Ws2812Simulator::Color.from_i(color_int)])
+      channel.leds.ipc_pipe[:to_display].put [:led, index, Ws2812Simulator::Color.from_i(color_int)]
     end
     
     def ws2811_render(leds_obj)

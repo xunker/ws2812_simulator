@@ -35,10 +35,12 @@ module Ws2812Simulator
       end
     end
 
+    STARTED_MESSAGE = 'started'
+
     attr_accessor :leds_dirty
     attr_reader :window, :leds, :count, :arrangement
 
-    def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false)
+    def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false, ipc_pipe: nil)
       @count = count
       @update_leds = false
       @arrangement = arrangement
@@ -64,22 +66,23 @@ module Ws2812Simulator
         end
       end
 
-      server_channel = Cod.tcp_server('localhost:4444')
-
       window.update do
-        (request, client_channel) = server_channel.get_ext
-
-        if request.first == :led
-          color = request.last
-          @leds[request[1]].set_color(r: color.r, g: color.g, b: color.b)
+        if ipc_pipe
+          ipc_cmd = ipc_pipe[:to_display].get
+          puts ipc_cmd.inspect if ipc_cmd.to_s.length > 0
+          if ipc_cmd.first == :led
+            color = ipc_cmd.last
+            @leds[ipc_cmd[1]].set_color(r: color.r, g: color.g, b: color.b)
+          end
         end
-
-        client_channel.put 'OK'
-        # client_channel.close
 
         if leds_dirty?
           update_leds
         end
+      end
+
+      if ipc_pipe
+        ipc_pipe[:from_display].put STARTED_MESSAGE
       end
     end
 

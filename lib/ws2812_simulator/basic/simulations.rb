@@ -22,6 +22,21 @@ class Ws2812Simulator::Basic
 
     def start_display!
       return if @display_pid
+
+      if RbConfig::CONFIG['host_os'] =~ /darwin/ && ENV['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] !~ /yes/i
+        warn "\n
+        MacOS/Darwin detected. You probably need the OBJC_DISABLE_INITIALIZE_FORK_SAFETY
+        environment variable set to 'YES' for this to work properly. Either set it on 
+        the same line as the command:
+       
+        $ OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES ruby <.rb file path>
+       
+        ..or export the variable in your shell:
+       
+        $ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+        $ ruby <.rb file path>
+        "
+      end
       
       @display_pid = fork do
         display = Ws2812Simulator::Display.new(count: count, arrangement: @display_options[:arrangement], include_labels: @display_options[:include_labels])
@@ -64,7 +79,7 @@ class Ws2812Simulator::Basic
     end
     
     def ws2811_led_set(channel, index, color_int)
-      puts "ws2811_led_set(#{channel.class}, #{index.inspect}, #{Ws2812Simulator::Color.from_i(color_int).inspect})"
+      # puts "ws2811_led_set(#{channel.class}, #{index.inspect}, #{Ws2812Simulator::Color.from_i(color_int).inspect})"
       # channel.leds.start_display!
       
       setter = @display_chan.interact([:led, index, Ws2812Simulator::Color.from_i(color_int)])

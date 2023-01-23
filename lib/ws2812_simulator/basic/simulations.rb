@@ -3,13 +3,13 @@ require_relative '../simulations/channel'
 class Ws2812Simulator::Basic
   module Simulations
     # returns 0 (success) or non-zero (error)
-    def ws2811_init(leds_obj)
-      leds.start_display!
+    def ws2811_init(ws2811_t)
+      ws2811_t.start_display!
       0
     end
 
-    def ws2811_channel_get(leds_obj, channel_number)
-      Ws2812Simulator::Simulations::Channel.new(leds_obj, channel_number)
+    def ws2811_channel_get(ws2811_t, channel_number)
+      Ws2812Simulator::Simulations::Channel.new(ws2811_t, channel_number)
     end
     
     def ws2811_led_set(channel, index, color_int)
@@ -18,10 +18,10 @@ class Ws2812Simulator::Basic
       channel.leds.ipc_pipe[:to_display].put [:led, index, Ws2812Simulator::Color.from_i(color_int)]
     end
     
-    def ws2811_render(leds_obj)
-      # puts "ws2811_render(#{leds_obj.inspect})"
+    def ws2811_render(ws2811_t)
+      # puts "ws2811_render(#{ws2811_t.inspect})"
       
-      leds_obj.start_display!
+      ws2811_t.start_display!
       
       0 # everything OK
     end
@@ -34,8 +34,8 @@ class Ws2812Simulator::Basic
 
     # Shut down DMA, PWM, and cleanup memory.
     # void ws2811_fini(ws2811_t *ws2811)
-    def ws2811_fini(leds_obj)
-      leds_obj.stop_display!
+    def ws2811_fini(ws2811_t)
+      ws2811_t.stop_display!
     end
   end
 end

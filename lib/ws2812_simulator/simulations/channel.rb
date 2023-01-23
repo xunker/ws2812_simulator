@@ -4,9 +4,8 @@ module Ws2812Simulator::Simulations
     attr_reader :count
     attr_reader :display
 
-    # leds_obj: Ws2811_t object
-    def initialize(leds_obj, channel_number)
-      @leds = leds_obj
+    def initialize(ws2811_t, channel_number)
+      @leds = ws2811_t
       @channel = channel_number
     end
 

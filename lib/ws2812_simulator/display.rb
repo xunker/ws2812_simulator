@@ -69,8 +69,8 @@ module Ws2812Simulator
       window.update do
         if ipc_pipe
           ipc_cmd = ipc_pipe[:to_display].get
-          puts ipc_cmd.inspect if ipc_cmd.to_s.length > 0
-          if ipc_cmd.first == :led
+          
+          if ipc_cmd.to_s.length > 0 && ipc_cmd.first == :led
             color = ipc_cmd.last
             @leds[ipc_cmd[1]].set_color(r: color.r, g: color.g, b: color.b)
           end

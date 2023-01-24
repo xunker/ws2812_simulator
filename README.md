@@ -13,6 +13,10 @@ computer that will reflect the LED state as though they were real LEDs.
 
 ## Installation
 
+> !!! NOTE: This gem is not yet in rubygems.org (as of Jan 2023) !!!
+>
+> To use this, download/clone the repo to your computer and `require` it with the full path or add it to your Gemfile with `gem 'ws2812_simulator', path: '<path to local copy of gem>'`
+
 Do the usual dance, either:
 
 ```

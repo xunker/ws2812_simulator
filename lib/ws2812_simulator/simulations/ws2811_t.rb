@@ -122,6 +122,11 @@ module Ws2812Simulator::Simulations
           sleep 0.25
         end
       end
+      msg = "count #{count}"
+      @display_socket.write "#{msg.length.to_s.rjust(3, '0')}#{msg}"
+      server_message = @display_socket.read(2)
+
+
 
       @display_started = true
     end

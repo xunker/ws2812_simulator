@@ -41,5 +41,5 @@ ws.show
 (0...n).each do |i|
 	ws[i] = Ws2812::Color.new(0, 0xff, 0)
 	ws.show
-	sleep 0.1
+	# sleep 0.1
 end

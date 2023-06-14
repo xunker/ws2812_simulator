@@ -93,6 +93,18 @@ module Ws2812Simulator
                   # client.puts STARTED_MESSAGE
                   puts "sending #{STARTED_MESSAGE}"
                   client.write STARTED_MESSAGE
+                elsif client_message =~ /^count/
+                  _cmd, new_count = client_message.split(/\s+/)
+                  new_count = new_count.to_i
+                  puts "existing count: #{@count.inspect}"
+                  if @count != new_count
+                    puts "new led count: #{new_count.inspect}"
+                    @count = new_count
+                    remove_leds
+                    set_leds#(@count)
+                  end
+
+                  client.write "OK"
                 elsif client_message =~ /^led/
                   _cmd, led_index, led_color_int = client_message.split(/\s+/)
                   # client.puts "OK"
@@ -154,18 +166,32 @@ module Ws2812Simulator
     #   end
     # end
 
-    def set_count(val)
-      return if val == @count
-
+    def remove_leds
       if @leds
         @leds.each do |led|
           @window.remove(led.obj)
           @window.remove(led.text) if led.text
         end
       end
+    end
+
+    def set_count(val)
+      return if val == @count
+
+      remove_leds
 
       @count = val
       set_leds
+
+      puts 'x'*100
+      @window = Ruby2D::Window.new
+      window.set(
+        title: "WS2812 Simulator - #{@count} LEDs",
+        width: width,
+        height: height,
+        fps: 60,
+        background: [0.5, 0.5, 0.5, 0.5]
+      )
     end
 
     def set_leds

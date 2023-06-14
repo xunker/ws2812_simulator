@@ -93,7 +93,9 @@ module Ws2812Simulator::Simulations
       attempts_remaining = 100
       puts 'waiting for display to start...'
 
-      @display_socket = TCPSocket.new('localhost', 8999); @display_socket.autoclose=false
+      @display_socket = TCPSocket.new('localhost', 8999)
+      # @display_socket.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
+      # @display_socket.autoclose=false
       until server_message == Ws2812Simulator::Display::STARTED_MESSAGE
         begin
           current_timestamp = Process.clock_gettime(Process::CLOCK_REALTIME)

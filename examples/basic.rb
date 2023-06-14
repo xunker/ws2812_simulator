@@ -3,7 +3,7 @@ $:.unshift(File.expand_path('../../lib', __FILE__))
 require 'ws2812_simulator/drop_in_replacement'
 
 # Init
-n = 64 # num leds
+n = 16 # num leds
 ws = Ws2812::Basic.new(n, 18) # +n+ leds at pin 18, using defaults
 ws.open
 
@@ -41,5 +41,5 @@ ws.show
 (0...n).each do |i|
 	ws[i] = Ws2812::Color.new(0, 0xff, 0)
 	ws.show
-	# sleep 0.1
+	sleep 0.1
 end

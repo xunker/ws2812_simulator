@@ -116,7 +116,7 @@ module Ws2812Simulator::Simulations
           # @display_socket.send "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}\000", 0
           @display_socket.write "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}"
           # server_message = @display_socket.gets.strip
-          server_message = @display_socket.read(Ws2812Simulator::Display::STARTED_MESSAGE.length)
+          server_message = @display_socket.recv(Ws2812Simulator::Display::STARTED_MESSAGE.length)
 
         rescue Errno::ECONNREFUSED
           sleep 0.25
@@ -125,7 +125,7 @@ module Ws2812Simulator::Simulations
       msg = "count #{count}"
       @display_socket.write "#{msg.length.to_s.rjust(3, '0')}#{msg}"
       server_message = @display_socket.read(2)
-
+      @display_socket.flush
 
 
       @display_started = true

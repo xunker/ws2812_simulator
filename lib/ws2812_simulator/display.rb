@@ -38,7 +38,7 @@ module Ws2812Simulator
     START_REQUEST = 'start'
     STARTED_MESSAGE = 'started'
 
-    attr_accessor :leds_dirty
+    attr_accessor :leds_dirty, :update_requested
     attr_reader :window, :leds, :count, :arrangement
 
     # def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false, ipc_pipe: nil)
@@ -77,15 +77,16 @@ module Ws2812Simulator
             puts 'accepted'
             loop do
               puts 'waiting for length'
-              msg_len = client_message = client.read(3)
+              msg_len = client_message = client.recv(3)
               puts "msg_len: #{msg_len.inspect}"
               msg_len = msg_len.to_i
               message_done = false
               while message_done == false
               # loop do
                 # client = @server.accept
-                client_message = ''
-                (msg_len).times { client_message << client.getc }
+                # client_message = ''
+                # (msg_len).times { client_message << client.getc }
+                client_message = client.recv(msg_len)
                 message_done=true
                 client_message.strip!
                 puts "CLIENT MESSAGE: #{client_message.inspect}"
@@ -142,8 +143,7 @@ module Ws2812Simulator
         #   end
         # end
 
-
-
+        # if update_requested? && leds_dirty?
         if leds_dirty?
           update_leds
         end
@@ -252,6 +252,7 @@ module Ws2812Simulator
     end
 
     def show
+      puts "Display#show called!!"
       @window.show
       # require 'byebug'; byebug;
       # true
@@ -263,6 +264,14 @@ module Ws2812Simulator
 
     def leds_dirty!
       @leds_dirty = true
+    end
+
+    def update_requested?
+      !!update_requested
+    end
+
+    def update_requested!
+      @update_requested = true
     end
   end
 end

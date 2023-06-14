@@ -1,4 +1,7 @@
-require 'cod'
+# require 'cod'
+require 'jimson'
+require 'rack/server'
+require 'json'
 
 require "ws2812_simulator/version"
 require "ws2812_simulator/display"

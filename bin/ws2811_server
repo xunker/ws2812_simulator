@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "ws2812_simulator"
+
+require 'getoptlong'
+
+opts = GetoptLong.new(
+  [ '--count', '-c',  GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--unicorn-hat', '-U', GetoptLong::NO_ARGUMENT ],
+  [ '--include-labels', '-L', GetoptLong::NO_ARGUMENT],
+  [ '--help', '-h', GetoptLong::NO_ARGUMENT]
+)
+
+count = 1
+arrangement = :default
+include_labels = false
+opts.each do |opt, arg|
+  case opt
+    when '--help'
+      puts <<-EOF
+ws2811_server [OPTION]
+
+-h, --help:
+   show help
+
+--count x, -c x:
+   number of LEDs to simulate
+
+--include-labels, -L:
+   Include labels for LED on the display
+
+--unicorn-hat, -U:
+   Use "unicorn hat" LED arrangement instead of default linear arrangment
+      EOF
+    when '--unicorn-hat'
+      arrangement = :unicorn_hat
+    when '--include-labels'
+      include_labels = true
+    when '--count'
+      count = arg.to_i
+  end
+end
+
+Ws2812Simulator::Display.new(count: count, arrangement: arrangement, include_labels: include_labels).show

@@ -35,12 +35,14 @@ module Ws2812Simulator
       end
     end
 
+    START_REQUEST = 'start'
     STARTED_MESSAGE = 'started'
 
     attr_accessor :leds_dirty
     attr_reader :window, :leds, :count, :arrangement
 
-    def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false, ipc_pipe: nil)
+    # def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false, ipc_pipe: nil)
+    def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false)
       @count = count
       @update_leds = false
       @arrangement = arrangement
@@ -56,7 +58,7 @@ module Ws2812Simulator
       )
 
       set_leds
-    
+
       window.on :key do |e|
         if e.type == :down
           case e.key
@@ -66,25 +68,76 @@ module Ws2812Simulator
         end
       end
 
-      window.update do
-        if ipc_pipe
-          ipc_cmd = ipc_pipe[:to_display].get
-          
-          if ipc_cmd.to_s.length > 0 && ipc_cmd.first == :led
-            color = ipc_cmd.last
-            @leds[ipc_cmd[1]].set_color(r: color.r, g: color.g, b: color.b)
+      @server = TCPServer.new('localhost', 8999)
+      # @server.autoclose = false
+      Thread.new {
+        loop do
+          puts 'accepting'
+          Thread.start(@server.accept) do |client|
+            puts 'accepted'
+            loop do
+              # client = @server.accept
+              client_message = client.gets.strip
+              puts "CLIENT MESSAGE: #{client_message.inspect}"
+              if client_message == START_REQUEST
+                client.puts STARTED_MESSAGE
+              elsif client_message =~ /^led/
+                _cmd, led_index, led_color_int = client_message.split(/\s+/)
+                client.puts "OK"
+                color = Color.from_i(led_color_int.to_i)
+                @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
+              else
+                client.puts 'ERROR'
+              end
+            end
+            puts 'closing'
+            client.close
+            puts 'closed'
           end
+          # puts client.inspect
         end
+      }
+
+      # @rpc_server = Jimson::Server.new(RpcHandler.new, host: 'localhost', port: 8999, show_errors: true)
+      # Thread.new {
+      #   puts 'rpc started'
+      #   @rpc_server.start
+      #   puts 'rpc ended'
+      # }
+
+      window.update do
+        # if ipc_pipe
+        #   ipc_cmd = ipc_pipe[:to_display].get
+
+        #   if ipc_cmd.to_s.length > 0 && ipc_cmd.first == :led
+        #     color = ipc_cmd.last
+        #     @leds[ipc_cmd[1]].set_color(r: color.r, g: color.g, b: color.b)
+        #   end
+        # end
+
+
 
         if leds_dirty?
           update_leds
         end
       end
 
-      if ipc_pipe
-        ipc_pipe[:from_display].put STARTED_MESSAGE
-      end
+      # if ipc_pipe
+      #   ipc_pipe[:from_display].put STARTED_MESSAGE
+      # end
     end
+
+    # class RpcHandler
+    #   extend Jimson::Handler
+
+    #   def sum(a,b)
+    #     a + b
+    #   end
+
+    #   def start
+    #     STARTED_MESSAGE
+    #   end
+    # end
 
     def set_count(val)
       return if val == @count
@@ -120,7 +173,7 @@ module Ws2812Simulator
             # reverse direction on this row to emulate unicorn hat
             led_x_pos = window.width - led_x_pos
           end
-          
+
           @leds << Led.new(
             self,
             @leds.length,

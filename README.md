@@ -40,8 +40,9 @@ Since this is designed to have the same API as the functional gem you use it in 
 with the same code. All you have to do is require the appropriate file in your code. You've got two
 options.
 
-A) Use `require 'ws2812_simulator'` and replace all calls to `Ws2812` with `Ws2812Simulator`.
-B) Use `require 'ws2812_simulator/drop_in_replacement'` which will _automatically alias the `Ws2812` constant to `Ws2812Simulator`.
+> A) Use `require 'ws2812_simulator'` and replace all calls to `Ws2812` with `Ws2812Simulator`.
+
+> B) Use `require 'ws2812_simulator/drop_in_replacement'` *instead of* `require 'ws2812'`, which will _automatically alias the `Ws2812` constant to `Ws2812Simulator`.
 
 Option "B" is preferred because you only have to swap out one line of code to make the switch.
 

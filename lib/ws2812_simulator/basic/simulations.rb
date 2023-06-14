@@ -11,21 +11,25 @@ class Ws2812Simulator::Basic
     def ws2811_channel_get(ws2811_t, channel_number)
       Ws2812Simulator::Simulations::Channel.new(ws2811_t, channel_number)
     end
-    
+
     def ws2811_led_set(channel, index, color_int)
       # puts "ws2811_led_set(#{channel.class}, #{index.inspect}, #{Ws2812Simulator::Color.from_i(color_int).inspect})"
-      
-      channel.leds.ipc_pipe[:to_display].put [:led, index, Ws2812Simulator::Color.from_i(color_int)]
+
+      # channel.leds.ipc_pipe[:to_display].put [:led, index, Ws2812Simulator::Color.from_i(color_int)]
+      # channel.leds.display_socket.puts "led #{index} #{Ws2812Simulator::Color.from_i(color_int)}"
+
+      channel.leds.display_socket.puts "led #{index} #{color_int}"
+      puts channel.leds.display_socket.gets
     end
-    
+
     def ws2811_render(ws2811_t)
       # puts "ws2811_render(#{ws2811_t.inspect})"
-      
+
       ws2811_t.start_display!
-      
+
       0 # everything OK
     end
-    
+
     # uint32_t ws2811_led_get(ws2811_channel_t *channel, int lednum)
     def ws2811_led_get(channel, lednum)
       return -1 if (lednum >= channel.count)

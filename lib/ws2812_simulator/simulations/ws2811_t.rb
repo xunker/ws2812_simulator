@@ -92,6 +92,8 @@ module Ws2812Simulator::Simulations
       last_message = 0#Process.clock_gettime(Process::CLOCK_REALTIME)
       attempts_remaining = 100
       puts 'waiting for display to start...'
+
+      @display_socket = TCPSocket.new('localhost', 8999); @display_socket.autoclose=false
       until server_message == Ws2812Simulator::Display::STARTED_MESSAGE
         begin
           current_timestamp = Process.clock_gettime(Process::CLOCK_REALTIME)
@@ -108,10 +110,13 @@ module Ws2812Simulator::Simulations
 
           puts '' if (attempts_remaining % 25) == 0
 
-          @display_socket = TCPSocket.new('localhost', 8999); @display_socket.autoclose=false
+          # @display_socket = TCPSocket.new('localhost', 8999); @display_socket.autoclose=false
 
-          @display_socket.puts Ws2812Simulator::Display::START_REQUEST
-          server_message = @display_socket.gets.strip
+          # @display_socket.puts Ws2812Simulator::Display::START_REQUEST
+          # @display_socket.send "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}\000", 0
+          @display_socket.write "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}"
+          # server_message = @display_socket.gets.strip
+          server_message = @display_socket.read(Ws2812Simulator::Display::STARTED_MESSAGE.length)
 
         rescue Errno::ECONNREFUSED
           sleep 0.25

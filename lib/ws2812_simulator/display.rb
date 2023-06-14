@@ -76,18 +76,33 @@ module Ws2812Simulator
           Thread.start(@server.accept) do |client|
             puts 'accepted'
             loop do
-              # client = @server.accept
-              client_message = client.gets.strip
-              puts "CLIENT MESSAGE: #{client_message.inspect}"
-              if client_message == START_REQUEST
-                client.puts STARTED_MESSAGE
-              elsif client_message =~ /^led/
-                _cmd, led_index, led_color_int = client_message.split(/\s+/)
-                client.puts "OK"
-                color = Color.from_i(led_color_int.to_i)
-                @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
-              else
-                client.puts 'ERROR'
+              puts 'waiting for length'
+              msg_len = client_message = client.read(3)
+              puts "msg_len: #{msg_len.inspect}"
+              msg_len = msg_len.to_i
+              message_done = false
+              while message_done == false
+              # loop do
+                # client = @server.accept
+                client_message = ''
+                (msg_len).times { client_message << client.getc }
+                message_done=true
+                client_message.strip!
+                puts "CLIENT MESSAGE: #{client_message.inspect}"
+                if client_message == START_REQUEST
+                  # client.puts STARTED_MESSAGE
+                  puts "sending #{STARTED_MESSAGE}"
+                  client.write STARTED_MESSAGE
+                elsif client_message =~ /^led/
+                  _cmd, led_index, led_color_int = client_message.split(/\s+/)
+                  # client.puts "OK"
+                  client.write "OK"
+                  color = Color.from_i(led_color_int.to_i)
+                  @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
+                else
+                  # client.puts 'ER'
+                  client.write 'ER'
+                end
               end
             end
             puts 'closing'

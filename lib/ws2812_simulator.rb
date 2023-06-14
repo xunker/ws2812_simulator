@@ -1,4 +1,4 @@
-
+require 'socket'
 
 require "ws2812_simulator/version"
 require "ws2812_simulator/display"

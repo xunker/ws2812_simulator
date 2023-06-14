@@ -22,7 +22,8 @@ module Ws2812Simulator::Simulations
     end
 
     def start_display!
-      return if @display_pid
+      # return if @display_pid
+      return if @display_started
 
       # if RbConfig::CONFIG['host_os'] =~ /darwin/ && ENV['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] !~ /yes/i
       #   warn "\n
@@ -116,6 +117,8 @@ module Ws2812Simulator::Simulations
           sleep 0.25
         end
       end
+
+      @display_started = true
     end
 
     def stop_display!

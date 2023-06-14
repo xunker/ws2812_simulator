@@ -69,11 +69,14 @@ module Ws2812Simulator
       end
 
       @server = TCPServer.new('localhost', 8999)
+      # @server.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
       # @server.autoclose = false
       Thread.new {
         loop do
           puts 'accepting'
-          Thread.start(@server.accept) do |client|
+          # Thread.start(@server.accept) do |client|
+          while (client = @server.accept)
+            client.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
             puts 'accepted'
             loop do
               puts 'waiting for length'
@@ -113,6 +116,7 @@ module Ws2812Simulator
                   color = Color.from_i(led_color_int.to_i)
                   @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
                 else
+                  puts "Error: #{client_message.inspect}"
                   # client.puts 'ER'
                   client.write 'ER'
                 end

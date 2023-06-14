@@ -37,8 +37,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency 'ruby2d'
-  spec.add_dependency 'jimson'
-  spec.add_dependency 'rack', '~>2.2.7' # jimson has problem with 3.x.x
 
   # spec.add_development_dependency "rake", "~> 10.0"
   # spec.add_development_dependency "rspec", "~> 3.0"

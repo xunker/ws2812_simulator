@@ -70,12 +70,12 @@ module Ws2812Simulator
 
       @server = TCPServer.new('localhost', 8999)
       # @server.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
-      # @server.autoclose = false
+      @server.autoclose = false
       Thread.new {
         loop do
           puts 'accepting'
-          # Thread.start(@server.accept) do |client|
-          while (client = @server.accept)
+          # thread within a thread so we can reuse the same server/socket better
+          Thread.start(@server.accept) do |client|
             client.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
             puts 'accepted'
             loop do

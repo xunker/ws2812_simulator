@@ -68,67 +68,118 @@ module Ws2812Simulator
         end
       end
 
-      @server = TCPServer.new('localhost', 8999)
-      # @server.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
-      @server.autoclose = false
+      @to_server = Fifo.new('./to_server.fifo', :r, :nowait)
+      @to_client = Fifo.new('./to_client.fifo', :w, :nowait)
+
       Thread.new {
         loop do
           puts 'accepting'
           # thread within a thread so we can reuse the same server/socket better
-          Thread.start(@server.accept) do |client|
-            client.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
-            puts 'accepted'
-            loop do
-              puts 'waiting for length'
-              msg_len = client_message = client.recv(3)
-              puts "msg_len: #{msg_len.inspect}"
-              msg_len = msg_len.to_i
-              message_done = false
-              while message_done == false
-              # loop do
-                # client = @server.accept
-                # client_message = ''
-                # (msg_len).times { client_message << client.getc }
-                client_message = client.recv(msg_len)
-                message_done=true
-                client_message.strip!
-                puts "CLIENT MESSAGE: #{client_message.inspect}"
-                if client_message == START_REQUEST
-                  # client.puts STARTED_MESSAGE
-                  puts "sending #{STARTED_MESSAGE}"
-                  client.write STARTED_MESSAGE
-                elsif client_message =~ /^count/
-                  _cmd, new_count = client_message.split(/\s+/)
-                  new_count = new_count.to_i
-                  puts "existing count: #{@count.inspect}"
-                  if @count != new_count
-                    puts "new led count: #{new_count.inspect}"
-                    @count = new_count
-                    remove_leds
-                    set_leds#(@count)
-                  end
+          # from_client = @to_server.gets
+          # puts "accepted: #{from_client.inspect}"
 
-                  client.write "OK"
-                elsif client_message =~ /^led/
-                  _cmd, led_index, led_color_int = client_message.split(/\s+/)
-                  # client.puts "OK"
-                  client.write "OK"
-                  color = Color.from_i(led_color_int.to_i)
-                  @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
-                else
-                  puts "Error: #{client_message.inspect}"
-                  # client.puts 'ER'
-                  client.write 'ER'
-                end
+          # msg_len = from_client.slice!(0, 3)
+
+          msg_len = @to_server.read(3)
+          puts "msg_len: #{msg_len.inspect}"
+
+          msg_len = msg_len.to_i
+          message_done = false
+          while message_done == false
+            # client_message = from_client.strip
+            client_message = @to_server.read(msg_len)
+            message_done=true
+            puts "CLIENT MESSAGE: #{client_message.inspect}"
+            if client_message == START_REQUEST
+              puts "sending #{STARTED_MESSAGE}"
+              @to_client.print STARTED_MESSAGE
+            elsif client_message =~ /^count/
+              _cmd, new_count = client_message.split(/\s+/)
+              new_count = new_count.to_i
+              puts "existing count: #{@count.inspect}"
+              if @count != new_count
+                puts "new led count: #{new_count.inspect}"
+                @count = new_count
+                remove_leds
+                set_leds#(@count)
               end
+
+              @to_client.print "OK"
+            elsif client_message =~ /^led/
+              _cmd, led_index, led_color_int = client_message.split(/\s+/)
+              @to_client.print "OK"
+              color = Color.from_i(led_color_int.to_i)
+              @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
+            else
+              puts "Error: #{client_message.inspect}"
+              @to_client.print 'ER'
             end
-            puts 'closing'
-            client.close
-            puts 'closed'
           end
-          # puts client.inspect
+          puts 'message done'
         end
       }
+
+      # @server = TCPServer.new('localhost', 8999)
+      # # @server.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
+      # @server.autoclose = false
+      # Thread.new {
+      #   loop do
+      #     puts 'accepting'
+      #     # thread within a thread so we can reuse the same server/socket better
+      #     Thread.start(@server.accept) do |client|
+      #       client.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
+      #       puts 'accepted'
+      #       loop do
+      #         puts 'waiting for length'
+      #         msg_len = client_message = client.recv(3)
+      #         puts "msg_len: #{msg_len.inspect}"
+      #         msg_len = msg_len.to_i
+      #         message_done = false
+      #         while message_done == false
+      #         # loop do
+      #           # client = @server.accept
+      #           # client_message = ''
+      #           # (msg_len).times { client_message << client.getc }
+      #           client_message = client.recv(msg_len)
+      #           message_done=true
+      #           client_message.strip!
+      #           puts "CLIENT MESSAGE: #{client_message.inspect}"
+      #           if client_message == START_REQUEST
+      #             # client.puts STARTED_MESSAGE
+      #             puts "sending #{STARTED_MESSAGE}"
+      #             client.write STARTED_MESSAGE
+      #           elsif client_message =~ /^count/
+      #             _cmd, new_count = client_message.split(/\s+/)
+      #             new_count = new_count.to_i
+      #             puts "existing count: #{@count.inspect}"
+      #             if @count != new_count
+      #               puts "new led count: #{new_count.inspect}"
+      #               @count = new_count
+      #               remove_leds
+      #               set_leds#(@count)
+      #             end
+
+      #             client.write "OK"
+      #           elsif client_message =~ /^led/
+      #             _cmd, led_index, led_color_int = client_message.split(/\s+/)
+      #             # client.puts "OK"
+      #             client.write "OK"
+      #             color = Color.from_i(led_color_int.to_i)
+      #             @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
+      #           else
+      #             puts "Error: #{client_message.inspect}"
+      #             # client.puts 'ER'
+      #             client.write 'ER'
+      #           end
+      #         end
+      #       end
+      #       puts 'closing'
+      #       client.close
+      #       puts 'closed'
+      #     end
+      #     # puts client.inspect
+      #   end
+      # }
 
       # @rpc_server = Jimson::Server.new(RpcHandler.new, host: 'localhost', port: 8999, show_errors: true)
       # Thread.new {

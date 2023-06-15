@@ -33,6 +33,7 @@ ws2811_server [OPTION]
 --unicorn-hat, -U:
    Use "unicorn hat" LED arrangement instead of default linear arrangment
       EOF
+      exit 0
     when '--unicorn-hat'
       arrangement = :unicorn_hat
     when '--include-labels'

@@ -2,7 +2,8 @@ module Ws2812Simulator::Simulations
   class Ws2811_t
     attr_accessor :freq, :dmanum
     attr_reader :count, :display_pid
-    attr_accessor :display_options, :display_socket
+    # attr_accessor :display_options, :display_socket
+    attr_accessor :display_options, :to_server, :to_client
     # attr_accessor :ipc_pipe
 
     def initialize
@@ -93,9 +94,44 @@ module Ws2812Simulator::Simulations
       attempts_remaining = 100
       puts 'waiting for display to start...'
 
-      @display_socket = TCPSocket.new('localhost', 8999)
-      # @display_socket.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
-      # @display_socket.autoclose=false
+      # @display_socket = TCPSocket.new('localhost', 8999)
+      # # @display_socket.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
+      # # @display_socket.autoclose=false
+      # until server_message == Ws2812Simulator::Display::STARTED_MESSAGE
+      #   begin
+      #     current_timestamp = Process.clock_gettime(Process::CLOCK_REALTIME)
+      #     if last_message < current_timestamp - 1
+      #       last_message = current_timestamp
+      #     end
+
+      #     if (attempts_remaining -= 1) <= 0
+      #       puts 'could not connect to server.'
+      #       exit 0
+      #     end
+
+      #     print '.'
+
+      #     puts '' if (attempts_remaining % 25) == 0
+
+      #     # @display_socket = TCPSocket.new('localhost', 8999); @display_socket.autoclose=false
+
+      #     # @display_socket.puts Ws2812Simulator::Display::START_REQUEST
+      #     # @display_socket.send "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}\000", 0
+      #     @display_socket.write "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}"
+      #     # server_message = @display_socket.gets.strip
+      #     server_message = @display_socket.recv(Ws2812Simulator::Display::STARTED_MESSAGE.length)
+
+      #   rescue Errno::ECONNREFUSED
+      #     sleep 0.25
+      #   end
+      # end
+      # msg = "count #{count}"
+      # @display_socket.write "#{msg.length.to_s.rjust(3, '0')}#{msg}"
+      # server_message = @display_socket.read(2)
+      # @display_socket.flush
+
+      @to_server = Fifo.new('./to_server.fifo', :w, :nowait)
+      @to_client = Fifo.new('./to_client.fifo', :r, :nowait)
       until server_message == Ws2812Simulator::Display::STARTED_MESSAGE
         begin
           current_timestamp = Process.clock_gettime(Process::CLOCK_REALTIME)
@@ -112,23 +148,16 @@ module Ws2812Simulator::Simulations
 
           puts '' if (attempts_remaining % 25) == 0
 
-          # @display_socket = TCPSocket.new('localhost', 8999); @display_socket.autoclose=false
-
-          # @display_socket.puts Ws2812Simulator::Display::START_REQUEST
-          # @display_socket.send "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}\000", 0
-          @display_socket.write "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}"
-          # server_message = @display_socket.gets.strip
-          server_message = @display_socket.recv(Ws2812Simulator::Display::STARTED_MESSAGE.length)
+          @to_server.print "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}"
+          server_message = @to_client.read(Ws2812Simulator::Display::STARTED_MESSAGE.length)
 
         rescue Errno::ECONNREFUSED
           sleep 0.25
         end
       end
       msg = "count #{count}"
-      @display_socket.write "#{msg.length.to_s.rjust(3, '0')}#{msg}"
-      server_message = @display_socket.read(2)
-      @display_socket.flush
-
+      @to_server.print "#{msg.length.to_s.rjust(3, '0')}#{msg}"
+      puts @to_client.read(2)
 
       @display_started = true
     end

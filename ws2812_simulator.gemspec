@@ -37,6 +37,11 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency 'ruby2d'
+  spec.add_dependency 'file-tail'
+  # spec.add_dependency 'sysvmq'
+  # spec.add_dependency 'posix-mqueue'
+  # spec.add_dependency 'ezmq'
+  spec.add_dependency 'simple-fifo'
 
   # spec.add_development_dependency "rake", "~> 10.0"
   # spec.add_development_dependency "rspec", "~> 3.0"

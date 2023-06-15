@@ -1,4 +1,5 @@
-require 'socket'
+# require 'socket'
+require 'simple-fifo'
 
 require "ws2812_simulator/version"
 require "ws2812_simulator/display"

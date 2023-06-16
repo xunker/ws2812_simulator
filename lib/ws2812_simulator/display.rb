@@ -204,6 +204,19 @@ module Ws2812Simulator
             end
 
             @to_client.puts "OK"
+
+          elsif client_message =~ /^arrangement/
+            _cmd, new_arrangement = client_message.split(/\s+/)
+            received_message_type = 'A'
+            new_arrangement = new_arrangement.to_sym
+            verbose_output << "existing arrangement: #{@arrangement.inspect}"
+            if @arrangement != new_arrangement
+              verbose_output << "new led arrangement: #{new_arrangement.inspect}"
+              @arrangement = new_arrangement
+              remove_leds
+              set_leds#(@arrangement)
+            end
+            @to_client.puts "OK"
           elsif client_message =~ /^led/
             _cmd, led_index, led_color_int = client_message.split(/\s+/)
             received_message_type = 'L'

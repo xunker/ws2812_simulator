@@ -9,6 +9,7 @@ opts = GetoptLong.new(
   [ '--count', '-c',  GetoptLong::REQUIRED_ARGUMENT ],
   [ '--unicorn-hat', '-U', GetoptLong::NO_ARGUMENT ],
   [ '--include-labels', '-L', GetoptLong::NO_ARGUMENT],
+  [ '--verbose', '-V', GetoptLong::NO_ARGUMENT],
   [ '--help', '-h', GetoptLong::NO_ARGUMENT]
 )
 
@@ -33,6 +34,7 @@ ws2811_server [OPTION]
 
 --unicorn-hat, -U:
    Use "unicorn hat" LED arrangement instead of default linear arrangment
+
 --verbose, -V:
    Use "unicorn hat" LED arrangement instead of default linear arrangment
       EOF

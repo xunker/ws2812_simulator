@@ -159,10 +159,14 @@ module Ws2812Simulator::Simulations
           sleep 0.25
         end
       end
+
       msg = "count #{count}"
       # @to_server.print "#{msg.length.to_s.rjust(3, '0')}#{msg}"
       # puts @to_client.read(2)
       @to_server.puts msg
+      puts @to_client.gets.strip
+
+      @to_server.puts "arrangement #{@display_options[:arrangement]}"
       puts @to_client.gets.strip
 
       @display_started = true

@@ -68,6 +68,7 @@ module Ws2812Simulator
         if e.type == :down
           case e.key
           when 'q'
+            Communication.send_shutdown_to_client!
             window.close
           end
         end
@@ -218,6 +219,9 @@ module Ws2812Simulator
     def show
       puts "Display#show called!!"
       @window.show
+    rescue SignalException => e
+      Communication.send_shutdown_to_client!
+      raise
     end
 
     def leds_dirty?

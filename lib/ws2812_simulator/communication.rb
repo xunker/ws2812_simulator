@@ -10,11 +10,14 @@ module Ws2812Simulator
       extend Forwardable
       def_delegators :instance,
         :send_to_server, :send_to_client, :read_from_server, :read_from_client,
-        :message_waiting_from_client?, :message_waiting_from_server?
+        :message_waiting_from_client?, :message_waiting_from_server?,
+        :send_shutdown_to_client!
     end
 
     TO_SERVER_FIFO = './to_server.fifo'
     TO_CLIENT_FIFO = './to_client.fifo'
+
+    SHUTDOWN_MESSAGE = 'shutdown'
 
     def send_to_server(message)
       to_server.puts(message)
@@ -25,7 +28,12 @@ module Ws2812Simulator
     end
 
     def read_from_server
-      from_server.gets.strip
+      from_server.gets.strip.tap{|msg|
+        if msg == SHUTDOWN_MESSAGE
+          puts '*** server is shutting down ***'
+          exit 0
+        end
+      }
     end
 
     def read_from_client
@@ -40,6 +48,10 @@ module Ws2812Simulator
     def message_waiting_from_server?
       @from_server_io ||= from_server.to_io
       @from_server_io.ready?
+    end
+
+    def send_shutdown_to_client!
+      send_to_client SHUTDOWN_MESSAGE
     end
 
     private

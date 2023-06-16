@@ -1,5 +1,6 @@
 # require 'socket'
 require 'simple-fifo'
+require 'io/wait' # for .ready? call on IO obj
 
 require "ws2812_simulator/version"
 require "ws2812_simulator/display"

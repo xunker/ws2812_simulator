@@ -20,14 +20,16 @@ class Ws2812Simulator::Basic
 
       # channel.leds.display_socket.puts "led #{index} #{color_int}"
       msg = "led #{index} #{color_int}"
-      msg = "#{msg.length.to_s.rjust(3, '0')}#{msg}"
+      # msg = "#{msg.length.to_s.rjust(3, '0')}#{msg}"
       # # channel.leds.display_socket.send(msg, 0)
       # channel.leds.display_socket.write(msg)
       # # # puts channel.leds.display_socket.gets
       # server_message = channel.leds.display_socket.recv(2)
 
-      channel.leds.to_server.print(msg)
-      server_message = channel.leds.to_client.read(2)
+      # channel.leds.to_server.print(msg)
+      # server_message = channel.leds.to_client.read(2)
+      channel.leds.to_server.puts(msg)
+      server_message = channel.leds.to_client.gets.strip
 
       puts "response: #{server_message}"
     end

@@ -148,16 +148,22 @@ module Ws2812Simulator::Simulations
 
           puts '' if (attempts_remaining % 25) == 0
 
-          @to_server.print "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}"
-          server_message = @to_client.read(Ws2812Simulator::Display::STARTED_MESSAGE.length)
+          # @to_server.print "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}"
+          # server_message = @to_client.read(Ws2812Simulator::Display::STARTED_MESSAGE.length)
+          @to_server.puts "#{Ws2812Simulator::Display::START_REQUEST}"
+          puts "waiting for server connect response"
+          server_message = @to_client.gets.strip
+          puts "response: #{server_message}"
 
         rescue Errno::ECONNREFUSED
           sleep 0.25
         end
       end
       msg = "count #{count}"
-      @to_server.print "#{msg.length.to_s.rjust(3, '0')}#{msg}"
-      puts @to_client.read(2)
+      # @to_server.print "#{msg.length.to_s.rjust(3, '0')}#{msg}"
+      # puts @to_client.read(2)
+      @to_server.puts msg
+      puts @to_client.gets.strip
 
       @display_started = true
     end

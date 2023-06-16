@@ -73,7 +73,7 @@ module Ws2812Simulator::Simulations
     end
 
     def stop_display!
-      Process.kill(:TERM, @display_pid) if @display_pid
+      Ws2812Simulator::Communication.send_stop_to_server!
     end
   end
 end

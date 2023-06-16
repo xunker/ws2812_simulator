@@ -42,12 +42,13 @@ module Ws2812Simulator
     attr_reader :window, :leds, :count, :arrangement
 
     # def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false, ipc_pipe: nil)
-    def initialize(count:, width: 640, height: 480, arrangement: :default, include_labels: false, verbose: false)
+    def initialize(count:, width: 640, height: 480, arrangement: :default, include_labels: false, verbose: false, obey_client_stop: false)
       @count = count
       @update_leds = false
       @arrangement = arrangement
       @include_labels = include_labels
       @verbose = verbose
+      @obey_client_stop = obey_client_stop
 
       @window = Ruby2D::Window.new
 
@@ -98,7 +99,7 @@ module Ws2812Simulator
               set_leds
             end
 
-            Communication.send_to_client "OK"
+            Communication.send_ok_to_client
 
           elsif client_message =~ /^arrangement/
             _cmd, new_arrangement = client_message.split(/\s+/)
@@ -110,16 +111,25 @@ module Ws2812Simulator
               remove_leds
               set_leds
             end
-            Communication.send_to_client "OK"
+            Communication.send_ok_to_client
           elsif client_message =~ /^led/
             _cmd, led_index, led_color_int = client_message.split(/\s+/)
-            Communication.send_to_client "OK"
+            Communication.send_ok_to_client
             color = Color.from_i(led_color_int.to_i)
             @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
+          elsif client_message == Communication::STOP_MESSAGE
+            Communication.send_ok_to_client
+            if @obey_client_stop
+              warn 'Received stop from client, shutting down'
+              @window.close
+              exit 1
+            else
+              warn 'Received stop from client, but will keep display running'
+            end
           else
             verbose_output << "Error: #{client_message.inspect}"
             received_message_type = 'E'
-            Communication.send_to_client 'ER'
+            Communication.send_error_to_client "unknown command #{client_message.inspect}"
           end
         end
 

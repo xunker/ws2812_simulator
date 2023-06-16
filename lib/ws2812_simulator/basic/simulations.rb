@@ -21,10 +21,9 @@ class Ws2812Simulator::Basic
       puts "response: #{server_message}"
     end
 
+    # returns 0 (success) or non-zero (error)
     def ws2811_render(ws2811_t)
-      # puts "ws2811_render(#{ws2811_t.inspect})"
-
-      # ws2811_t.start_display!
+      # no-op for now
 
       0 # everything OK
     end

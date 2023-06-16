@@ -37,6 +37,7 @@ module Ws2812Simulator
 
     START_REQUEST = 'start'
     STARTED_MESSAGE = 'started'
+    MAX_TICK = 25
 
     attr_accessor :leds_dirty, :update_requested
     attr_reader :window, :leds, :count, :arrangement
@@ -49,11 +50,16 @@ module Ws2812Simulator
       @include_labels = include_labels
 
       @window = Ruby2D::Window.new
-      window.set(
-        title: "WS2812 Simulator - #{count} LEDs",
+
+      # @tick is only here to provide `print` fodder during window.update so threads are more responsive
+      @tick = 0
+      @tick_dir = 1 # or -1
+
+      @window.set(
+        title: "WS2812 Simulator",
         width: width,
         height: height,
-        fps: 60,
+        fps_cap: 30,
         background: [0.5, 0.5, 0.5, 0.5]
       )
 
@@ -202,6 +208,20 @@ module Ws2812Simulator
         if leds_dirty?
           update_leds
         end
+
+        # @tick is only here to provide `print` fodder during window.update so threads are more responsive
+        case @tick_dir
+        when 1
+          print '.'
+        else
+          print "\b" # backspace
+        end
+        if @tick >= MAX_TICK
+          @tick_dir = -1
+        elsif @tick <= 0
+          @tick_dir = 1
+        end
+        @tick += @tick_dir
       end
 
       # if ipc_pipe
@@ -237,16 +257,6 @@ module Ws2812Simulator
 
       @count = val
       set_leds
-
-      puts 'x'*100
-      @window = Ruby2D::Window.new
-      window.set(
-        title: "WS2812 Simulator - #{@count} LEDs",
-        width: width,
-        height: height,
-        fps: 60,
-        background: [0.5, 0.5, 0.5, 0.5]
-      )
     end
 
     def set_leds

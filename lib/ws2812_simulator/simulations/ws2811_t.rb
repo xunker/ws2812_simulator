@@ -23,30 +23,7 @@ module Ws2812Simulator::Simulations
     end
 
     def start_display!
-      # return if @display_pid
       return if @display_started
-
-      # if RbConfig::CONFIG['host_os'] =~ /darwin/ && ENV['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] !~ /yes/i
-      #   warn "\n
-      #   MacOS/Darwin detected. You probably need the OBJC_DISABLE_INITIALIZE_FORK_SAFETY
-      #   environment variable set to 'YES' for this to work properly. Either set it on
-      #   the same line as the command:
-
-      #   $ OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES ruby <.rb file path>
-
-      #   ..or export the variable in your shell:
-
-      #   $ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
-      #   $ ruby <.rb file path>
-      #   "
-      # end
-
-      # @ipc_pipe = { from_display: Cod.pipe, to_display:  Cod.pipe }
-
-      # @display_pid = fork do
-      #   display = Ws2812Simulator::Display.new(count: count, arrangement: @display_options[:arrangement], include_labels: @display_options[:include_labels], ipc_pipe: @ipc_pipe)
-      #   display.show
-      # end
 
       puts "Please start the display server using this command:"
       cmd = "ws2811_server --count #{count}"
@@ -55,83 +32,11 @@ module Ws2812Simulator::Simulations
 
       puts "\t#{cmd}"
 
-      # display_message = ''
-      # display_message = @ipc_pipe[:from_display].get) == Ws2812Simulator::Display::STARTED_MESSAGE
-      #   puts 'waiting for display to start...'
-      # end
-
-      # Errno::ECONNREFUSED
-
-      # server_message = ''
-      # last_message = 0#Process.clock_gettime(Process::CLOCK_REALTIME)
-      # attempts_remaining = 100
-      # puts 'waiting for display to start...'
-      # until server_message == Ws2812Simulator::Display::STARTED_MESSAGE
-      #   begin
-      #     current_timestamp = Process.clock_gettime(Process::CLOCK_REALTIME)
-      #     if last_message < current_timestamp - 1
-      #       last_message = current_timestamp
-      #     end
-
-      #     if (attempts_remaining -= 1) <= 0
-      #       puts 'could not connect to server.'
-      #       exit 0
-      #     end
-
-      #     print '.'
-
-      #     puts '' if (attempts_remaining % 25) == 0
-
-      #     @rpc_client = Jimson::Client.new("http://localhost:8999")
-      #     server_message = @rpc_client.start
-      #   rescue Errno::ECONNREFUSED
-      #     sleep 0.25
-      #   end
-      # end
-
       server_message = ''
       last_message = 0#Process.clock_gettime(Process::CLOCK_REALTIME)
       attempts_remaining = 100
       puts 'waiting for display to start...'
 
-      # @display_socket = TCPSocket.new('localhost', 8999)
-      # # @display_socket.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
-      # # @display_socket.autoclose=false
-      # until server_message == Ws2812Simulator::Display::STARTED_MESSAGE
-      #   begin
-      #     current_timestamp = Process.clock_gettime(Process::CLOCK_REALTIME)
-      #     if last_message < current_timestamp - 1
-      #       last_message = current_timestamp
-      #     end
-
-      #     if (attempts_remaining -= 1) <= 0
-      #       puts 'could not connect to server.'
-      #       exit 0
-      #     end
-
-      #     print '.'
-
-      #     puts '' if (attempts_remaining % 25) == 0
-
-      #     # @display_socket = TCPSocket.new('localhost', 8999); @display_socket.autoclose=false
-
-      #     # @display_socket.puts Ws2812Simulator::Display::START_REQUEST
-      #     # @display_socket.send "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}\000", 0
-      #     @display_socket.write "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}"
-      #     # server_message = @display_socket.gets.strip
-      #     server_message = @display_socket.recv(Ws2812Simulator::Display::STARTED_MESSAGE.length)
-
-      #   rescue Errno::ECONNREFUSED
-      #     sleep 0.25
-      #   end
-      # end
-      # msg = "count #{count}"
-      # @display_socket.write "#{msg.length.to_s.rjust(3, '0')}#{msg}"
-      # server_message = @display_socket.read(2)
-      # @display_socket.flush
-
-      @to_server = Fifo.new('./to_server.fifo', :w, :nowait)
-      @to_client = Fifo.new('./to_client.fifo', :r, :nowait)
       until server_message == Ws2812Simulator::Display::STARTED_MESSAGE
         begin
           current_timestamp = Process.clock_gettime(Process::CLOCK_REALTIME)
@@ -148,11 +53,9 @@ module Ws2812Simulator::Simulations
 
           puts '' if (attempts_remaining % 25) == 0
 
-          # @to_server.print "#{Ws2812Simulator::Display::START_REQUEST.length.to_s.rjust(3, '0')}#{Ws2812Simulator::Display::START_REQUEST}"
-          # server_message = @to_client.read(Ws2812Simulator::Display::STARTED_MESSAGE.length)
-          @to_server.puts "#{Ws2812Simulator::Display::START_REQUEST}"
+          Ws2812Simulator::Communication.send_to_server Ws2812Simulator::Display::START_REQUEST
           puts "waiting for server connect response"
-          server_message = @to_client.gets.strip
+          server_message = Ws2812Simulator::Communication.read_from_server
           puts "response: #{server_message}"
 
         rescue Errno::ECONNREFUSED
@@ -160,14 +63,11 @@ module Ws2812Simulator::Simulations
         end
       end
 
-      msg = "count #{count}"
-      # @to_server.print "#{msg.length.to_s.rjust(3, '0')}#{msg}"
-      # puts @to_client.read(2)
-      @to_server.puts msg
-      puts @to_client.gets.strip
+      Ws2812Simulator::Communication.send_to_server "count #{count}"
+      puts Ws2812Simulator::Communication.read_from_server
 
-      @to_server.puts "arrangement #{@display_options[:arrangement]}"
-      puts @to_client.gets.strip
+      Ws2812Simulator::Communication.send_to_server "arrangement #{@display_options[:arrangement]}"
+      puts Ws2812Simulator::Communication.read_from_server
 
       @display_started = true
     end

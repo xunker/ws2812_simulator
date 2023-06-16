@@ -42,7 +42,7 @@ module Ws2812Simulator
     attr_reader :window, :leds, :count, :arrangement
 
     # def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false, ipc_pipe: nil)
-    def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false, verbose: false)
+    def initialize(count:, width: 640, height: 480, arrangement: :default, include_labels: false, verbose: false)
       @count = count
       @update_leds = false
       @arrangement = arrangement
@@ -51,9 +51,8 @@ module Ws2812Simulator
 
       @window = Ruby2D::Window.new
 
-      # @tick is only here to provide `print` fodder during window.update so threads are more responsive
+      # @tick is only here to provide `print` fodder during window.update
       @tick = 0
-      @tick_dir = 1 # or -1
 
       @window.set(
         title: "WS2812 Simulator",
@@ -74,163 +73,55 @@ module Ws2812Simulator
         end
       end
 
-      @to_server = Fifo.new('./to_server.fifo', :r, :nowait)
-      @to_client = Fifo.new('./to_client.fifo', :w, :nowait)
-      # @client_messages = []
-
-      # Thread.new {
-      #   loop do
-      #     puts 'accepting'
-      #     # thread within a thread so we can reuse the same server/socket better
-      #     # from_client = @to_server.gets
-      #     # puts "accepted: #{from_client.inspect}"
-
-      #     # msg_len = from_client.slice!(0, 3)
-
-      #     # msg_len = @to_server.read(3)
-      #     # puts "msg_len: #{msg_len.inspect}"
-
-      #     # msg_len = msg_len.to_i
-      #     # message_done = false
-      #     # while message_done == false
-      #     #   # client_message = from_client.strip
-      #     #   # client_message = @to_server.read(msg_len)
-      #     #   message_done=true
-      #     @client_messages << @to_server.gets.strip
-      #     puts "CLIENT MESSAGE: #{@client_messages.last.inspect}"
-
-      #   end
-      # }
-
-      # @server = TCPServer.new('localhost', 8999)
-      # # @server.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
-      # @server.autoclose = false
-      # Thread.new {
-      #   loop do
-      #     puts 'accepting'
-      #     # thread within a thread so we can reuse the same server/socket better
-      #     Thread.start(@server.accept) do |client|
-      #       client.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
-      #       puts 'accepted'
-      #       loop do
-      #         puts 'waiting for length'
-      #         msg_len = client_message = client.recv(3)
-      #         puts "msg_len: #{msg_len.inspect}"
-      #         msg_len = msg_len.to_i
-      #         message_done = false
-      #         while message_done == false
-      #         # loop do
-      #           # client = @server.accept
-      #           # client_message = ''
-      #           # (msg_len).times { client_message << client.getc }
-      #           client_message = client.recv(msg_len)
-      #           message_done=true
-      #           client_message.strip!
-      #           puts "CLIENT MESSAGE: #{client_message.inspect}"
-      #           if client_message == START_REQUEST
-      #             # client.puts STARTED_MESSAGE
-      #             puts "sending #{STARTED_MESSAGE}"
-      #             client.write STARTED_MESSAGE
-      #           elsif client_message =~ /^count/
-      #             _cmd, new_count = client_message.split(/\s+/)
-      #             new_count = new_count.to_i
-      #             puts "existing count: #{@count.inspect}"
-      #             if @count != new_count
-      #               puts "new led count: #{new_count.inspect}"
-      #               @count = new_count
-      #               remove_leds
-      #               set_leds#(@count)
-      #             end
-
-      #             client.write "OK"
-      #           elsif client_message =~ /^led/
-      #             _cmd, led_index, led_color_int = client_message.split(/\s+/)
-      #             # client.puts "OK"
-      #             client.write "OK"
-      #             color = Color.from_i(led_color_int.to_i)
-      #             @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
-      #           else
-      #             puts "Error: #{client_message.inspect}"
-      #             # client.puts 'ER'
-      #             client.write 'ER'
-      #           end
-      #         end
-      #       end
-      #       puts 'closing'
-      #       client.close
-      #       puts 'closed'
-      #     end
-      #     # puts client.inspect
-      #   end
-      # }
-
-      # @rpc_server = Jimson::Server.new(RpcHandler.new, host: 'localhost', port: 8999, show_errors: true)
-      # Thread.new {
-      #   puts 'rpc started'
-      #   @rpc_server.start
-      #   puts 'rpc ended'
-      # }
-
       window.update do
-        # if ipc_pipe
-        #   ipc_cmd = ipc_pipe[:to_display].get
-
-        #   if ipc_cmd.to_s.length > 0 && ipc_cmd.first == :led
-        #     color = ipc_cmd.last
-        #     @leds[ipc_cmd[1]].set_color(r: color.r, g: color.g, b: color.b)
-        #   end
-        # end
 
         verbose_output = []
-        # if (client_message = @client_messages.shift).to_s.length > 0
+
         received_message_type = nil
-        if @to_server.to_io.ready?
-          client_message = @to_server.gets.strip
+        if Communication.message_waiting_from_client?
+          client_message = Communication.read_from_client
+          received_message_type = client_message[0].upcase
+
           verbose_output << "UPDATE: processing #{client_message}"
           if client_message == START_REQUEST
             verbose_output << "sending #{STARTED_MESSAGE}"
-            received_message_type = 'S'
-            @to_client.puts STARTED_MESSAGE
+            Communication.send_to_client STARTED_MESSAGE
           elsif client_message =~ /^count/
             _cmd, new_count = client_message.split(/\s+/)
-            received_message_type = 'C'
             new_count = new_count.to_i
             verbose_output << "existing count: #{@count.inspect}"
             if @count != new_count
               verbose_output << "new led count: #{new_count.inspect}"
               @count = new_count
               remove_leds
-              set_leds#(@count)
+              set_leds
             end
 
-            @to_client.puts "OK"
+            Communication.send_to_client "OK"
 
           elsif client_message =~ /^arrangement/
             _cmd, new_arrangement = client_message.split(/\s+/)
-            received_message_type = 'A'
             new_arrangement = new_arrangement.to_sym
             verbose_output << "existing arrangement: #{@arrangement.inspect}"
             if @arrangement != new_arrangement
               verbose_output << "new led arrangement: #{new_arrangement.inspect}"
               @arrangement = new_arrangement
               remove_leds
-              set_leds#(@arrangement)
+              set_leds
             end
-            @to_client.puts "OK"
+            Communication.send_to_client "OK"
           elsif client_message =~ /^led/
             _cmd, led_index, led_color_int = client_message.split(/\s+/)
-            received_message_type = 'L'
-            @to_client.puts "OK"
+            Communication.send_to_client "OK"
             color = Color.from_i(led_color_int.to_i)
             @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
           else
             verbose_output << "Error: #{client_message.inspect}"
             received_message_type = 'E'
-            @to_client.puts 'ER'
+            Communication.send_to_client 'ER'
           end
         end
 
-        # if update_requested? && leds_dirty?
         if leds_dirty?
           update_leds
         end
@@ -247,23 +138,7 @@ module Ws2812Simulator
           $stdout.flush
         end
       end
-
-      # if ipc_pipe
-      #   ipc_pipe[:from_display].put STARTED_MESSAGE
-      # end
     end
-
-    # class RpcHandler
-    #   extend Jimson::Handler
-
-    #   def sum(a,b)
-    #     a + b
-    #   end
-
-    #   def start
-    #     STARTED_MESSAGE
-    #   end
-    # end
 
     def remove_leds
       if @leds
@@ -343,8 +218,6 @@ module Ws2812Simulator
     def show
       puts "Display#show called!!"
       @window.show
-      # require 'byebug'; byebug;
-      # true
     end
 
     def leds_dirty?

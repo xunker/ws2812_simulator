@@ -15,21 +15,8 @@ class Ws2812Simulator::Basic
     def ws2811_led_set(channel, index, color_int)
       puts "ws2811_led_set(#{channel.class}, #{index.inspect}, #{Ws2812Simulator::Color.from_i(color_int).inspect})"
 
-      # channel.leds.ipc_pipe[:to_display].put [:led, index, Ws2812Simulator::Color.from_i(color_int)]
-      # channel.leds.display_socket.puts "led #{index} #{Ws2812Simulator::Color.from_i(color_int)}"
-
-      # channel.leds.display_socket.puts "led #{index} #{color_int}"
-      msg = "led #{index} #{color_int}"
-      # msg = "#{msg.length.to_s.rjust(3, '0')}#{msg}"
-      # # channel.leds.display_socket.send(msg, 0)
-      # channel.leds.display_socket.write(msg)
-      # # # puts channel.leds.display_socket.gets
-      # server_message = channel.leds.display_socket.recv(2)
-
-      # channel.leds.to_server.print(msg)
-      # server_message = channel.leds.to_client.read(2)
-      channel.leds.to_server.puts(msg)
-      server_message = channel.leds.to_client.gets.strip
+      Ws2812Simulator::Communication.send_to_server "led #{index} #{color_int}"
+      server_message = Ws2812Simulator::Communication.read_from_server
 
       puts "response: #{server_message}"
     end

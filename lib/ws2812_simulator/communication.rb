@@ -13,6 +13,9 @@ module Ws2812Simulator
         :message_waiting_from_client?, :message_waiting_from_server?
     end
 
+    TO_SERVER_FIFO = './to_server.fifo'
+    TO_CLIENT_FIFO = './to_client.fifo'
+
     def send_to_server(message)
       to_server.puts(message)
     end
@@ -42,19 +45,19 @@ module Ws2812Simulator
     private
 
     def to_server
-      @to_server ||= Fifo.new('./to_server.fifo', :w, :nowait)
+      @to_server ||= Fifo.new(TO_SERVER_FIFO, :w, :nowait)
     end
 
     def to_client
-      @to_client ||= Fifo.new('./to_client.fifo', :w, :nowait)
+      @to_client ||= Fifo.new(TO_CLIENT_FIFO, :w, :nowait)
     end
 
     def from_server
-      @from_server ||= Fifo.new('./to_client.fifo', :r, :nowait)
+      @from_server ||= Fifo.new(TO_CLIENT_FIFO, :r, :nowait)
     end
 
     def from_client
-      @from_client ||= Fifo.new('./to_server.fifo', :r, :nowait)
+      @from_client ||= Fifo.new(TO_SERVER_FIFO, :r, :nowait)
     end
   end
 end

@@ -41,8 +41,10 @@ module Ws2812Simulator
     attr_accessor :leds_dirty, :update_requested
     attr_reader :window, :leds, :count, :arrangement
 
-    # def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false, ipc_pipe: nil)
-    def initialize(count:, width: 640, height: 480, arrangement: :default, include_labels: false, verbose: false, obey_client_stop: false)
+    def initialize(count:,
+      width: 640, height: 480,
+      arrangement: :default, include_labels: false,
+      verbose: false, obey_client_stop: false)
       @count = count
       @update_leds = false
       @arrangement = arrangement

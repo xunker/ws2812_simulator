@@ -13,12 +13,13 @@ class Ws2812Simulator::Basic
     end
 
     def ws2811_led_set(channel, index, color_int)
-      puts "ws2811_led_set(#{channel.class}, #{index.inspect}, #{Ws2812Simulator::Color.from_i(color_int).inspect})"
-
-      Ws2812Simulator::Communication.send_to_server "led #{index} #{color_int}"
+      # puts "ws2811_led_set(#{channel.class}, #{index.inspect}, #{Ws2812Simulator::Color.from_i(color_int).inspect})"
+      msg = "led #{index} #{color_int}"
+      # puts "send: #{msg}"
+      Ws2812Simulator::Communication.send_to_server msg
       server_message = Ws2812Simulator::Communication.read_from_server
 
-      puts "response: #{server_message}"
+      # puts "response: #{server_message}"
     end
 
     # returns 0 (success) or non-zero (error)

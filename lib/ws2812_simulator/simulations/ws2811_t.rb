@@ -66,7 +66,7 @@ module Ws2812Simulator::Simulations
       Ws2812Simulator::Communication.send_to_server "count #{count}"
       puts Ws2812Simulator::Communication.read_from_server
 
-      Ws2812Simulator::Communication.send_to_server "arrangement #{@display_options[:arrangement]}"
+      Ws2812Simulator::Communication.send_to_server "arrangement #{@display_options[:arrangement] || :default}"
       puts Ws2812Simulator::Communication.read_from_server
 
       @display_started = true

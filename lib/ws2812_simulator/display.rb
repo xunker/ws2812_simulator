@@ -3,7 +3,9 @@ require 'ruby2d'
 module Ws2812Simulator
   class Display
     class Led
-      DEFAULT_COLOR = [0.0, 0.0, 0.0, 1.0]
+      DEFAULT_COLOR = [0.0, 0.0, 0.0, 1.0] # r, g, b, a
+
+      HEX_TO_FLOAT_CONVERSION_CONSTANT = (1.0 / 255.0)
 
       attr_reader :number, :obj, :text, :r, :g, :b, :alpha, :string
       attr_accessor :data, :events
@@ -22,16 +24,21 @@ module Ws2812Simulator
       end
 
       def set_color(r: nil, g: nil, b: nil, a: nil)
-        @r = r || @r
-        @g = g || @g
-        @b = b || @b
-        @alpha = a || @alpha
+        @r = hex_to_float(r, default: @r)
+        @g = hex_to_float(g, default: @g)
+        @b = hex_to_float(b, default: @b)
+        @alpha = hex_to_float(a, default: @alpha)
         @string.leds_dirty!
         get_color
       end
 
       def get_color(include_alpha: true)
         { r: @r, g: @g, b: @b, a: (include_alpha ? @alpha : nil) }.compact
+      end
+
+      def hex_to_float(hex_val, default:)
+        return default unless hex_val
+        hex_val.to_f * HEX_TO_FLOAT_CONVERSION_CONSTANT
       end
     end
 
@@ -42,7 +49,7 @@ module Ws2812Simulator
     attr_reader :window, :leds, :count, :arrangement
 
     def initialize(count:,
-      width: 640, height: 480,
+      width: 320, height: 240,
       arrangement: :default, include_labels: false,
       verbose: false, obey_client_stop: false)
       @count = count
@@ -61,7 +68,7 @@ module Ws2812Simulator
         title: "WS2812 Simulator",
         width: width,
         height: height,
-        fps_cap: 60,
+        fps_cap: 60*2,
         background: [0.5, 0.5, 0.5, 0.5]
       )
 
@@ -86,7 +93,7 @@ module Ws2812Simulator
           client_message = Communication.read_from_client
           received_message_type = client_message[0].upcase
 
-          verbose_output << "UPDATE: processing #{client_message}"
+          verbose_output << "processing #{client_message}"
           if client_message == START_REQUEST
             verbose_output << "sending #{STARTED_MESSAGE}"
             Communication.send_to_client STARTED_MESSAGE
@@ -97,8 +104,8 @@ module Ws2812Simulator
             if @count != new_count
               verbose_output << "new led count: #{new_count.inspect}"
               @count = new_count
-              remove_leds
-              set_leds
+
+              reset_leds
             end
 
             Communication.send_ok_to_client
@@ -110,8 +117,8 @@ module Ws2812Simulator
             if @arrangement != new_arrangement
               verbose_output << "new led arrangement: #{new_arrangement.inspect}"
               @arrangement = new_arrangement
-              remove_leds
-              set_leds
+
+              reset_leds
             end
             Communication.send_ok_to_client
           elsif client_message =~ /^led/
@@ -162,18 +169,17 @@ module Ws2812Simulator
       end
     end
 
-    def set_count(val)
-      return if val == @count
-
+    def reset_leds
       remove_leds
-
-      @count = val
       set_leds
     end
 
     def set_leds
       leds_per_row =  Math.sqrt(count).ceil
       leds_per_column =  Math.sqrt(count).floor
+      while (leds_per_row * leds_per_column) < @count
+        leds_per_column += 1
+      end
 
       led_d = [window.width / leds_per_row, window.height / leds_per_column].min
 

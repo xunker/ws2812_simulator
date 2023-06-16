@@ -15,6 +15,7 @@ opts = GetoptLong.new(
 count = 1
 arrangement = :default
 include_labels = false
+verbose = false
 opts.each do |opt, arg|
   case opt
     when '--help'
@@ -32,15 +33,19 @@ ws2811_server [OPTION]
 
 --unicorn-hat, -U:
    Use "unicorn hat" LED arrangement instead of default linear arrangment
+--verbose, -V:
+   Use "unicorn hat" LED arrangement instead of default linear arrangment
       EOF
       exit 0
     when '--unicorn-hat'
       arrangement = :unicorn_hat
     when '--include-labels'
       include_labels = true
+    when '--verbose'
+      verbose = true
     when '--count'
       count = arg.to_i
   end
 end
 
-Ws2812Simulator::Display.new(count: count, arrangement: arrangement, include_labels: include_labels).show
+Ws2812Simulator::Display.new(count: count, arrangement: arrangement, include_labels: include_labels, verbose: verbose).show

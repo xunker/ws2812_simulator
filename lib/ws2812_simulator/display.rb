@@ -37,17 +37,17 @@ module Ws2812Simulator
 
     START_REQUEST = 'start'
     STARTED_MESSAGE = 'started'
-    MAX_TICK = 25
 
     attr_accessor :leds_dirty, :update_requested
     attr_reader :window, :leds, :count, :arrangement
 
     # def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false, ipc_pipe: nil)
-    def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false)
+    def initialize(count:, width: 800, height: 600, arrangement: :default, include_labels: false, verbose: false)
       @count = count
       @update_leds = false
       @arrangement = arrangement
       @include_labels = include_labels
+      @verbose = verbose
 
       @window = Ruby2D::Window.new
 
@@ -183,14 +183,17 @@ module Ws2812Simulator
 
         verbose_output = []
         # if (client_message = @client_messages.shift).to_s.length > 0
+        received_message_type = nil
         if @to_server.to_io.ready?
           client_message = @to_server.gets.strip
           verbose_output << "UPDATE: processing #{client_message}"
           if client_message == START_REQUEST
             verbose_output << "sending #{STARTED_MESSAGE}"
+            received_message_type = 'S'
             @to_client.puts STARTED_MESSAGE
           elsif client_message =~ /^count/
             _cmd, new_count = client_message.split(/\s+/)
+            received_message_type = 'C'
             new_count = new_count.to_i
             verbose_output << "existing count: #{@count.inspect}"
             if @count != new_count
@@ -203,11 +206,13 @@ module Ws2812Simulator
             @to_client.puts "OK"
           elsif client_message =~ /^led/
             _cmd, led_index, led_color_int = client_message.split(/\s+/)
+            received_message_type = 'L'
             @to_client.puts "OK"
             color = Color.from_i(led_color_int.to_i)
             @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
           else
             verbose_output << "Error: #{client_message.inspect}"
+            received_message_type = 'E'
             @to_client.puts 'ER'
           end
         end
@@ -217,23 +222,17 @@ module Ws2812Simulator
           update_leds
         end
 
-        if verbose_output.length > 0
+        if @verbose && verbose_output.length > 0
           puts verbose_output.join("\n")
         else
-          # @tick is only here to provide `print` fodder during window.update so threads are more responsive
-          case @tick_dir
-          when 1
-            print '.'
-          else
-            print "\b" # backspace
-          end
+          print received_message_type || '.'
         end
-        if @tick >= MAX_TICK
-          @tick_dir = -1
-        elsif @tick <= 0
-          @tick_dir = 1
+        @tick += 1
+        if @tick >= @count
+          @tick = 0
+          print "\r"
+          $stdout.flush
         end
-        @tick += @tick_dir
       end
 
       # if ipc_pipe

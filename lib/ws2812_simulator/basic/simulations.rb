@@ -24,7 +24,7 @@ class Ws2812Simulator::Basic
 
     # returns 0 (success) or non-zero (error)
     def ws2811_render(ws2811_t)
-      # no-op for now
+      Ws2812Simulator::Communication.send_to_server 'render'
 
       0 # everything OK
     end

@@ -135,6 +135,9 @@ module Ws2812Simulator
             else
               warn 'Received stop from client, but will keep display running'
             end
+          elsif client_message == 'render'
+            Communication.send_ok_to_client
+            update_requested!
           else
             verbose_output << "Error: #{client_message.inspect}"
             received_message_type = 'E'
@@ -142,7 +145,7 @@ module Ws2812Simulator
           end
         end
 
-        if leds_dirty?
+        if leds_dirty? && update_requested?
           update_leds
         end
 

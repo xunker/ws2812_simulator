@@ -14,7 +14,9 @@ module Ws2812Simulator
         :send_shutdown_to_client!,
         :send_ok_to_client,
         :send_error_to_client,
-        :send_stop_to_server!
+        :send_stop_to_server!,
+        :buffer_client_to_server?,
+        :buffer_client_to_server!
     end
 
     TO_SERVER_FIFO = './to_server.fifo'
@@ -24,9 +26,45 @@ module Ws2812Simulator
     OK_MESSAGE = 'ok'
     ERROR_MESSAGE = 'error'
     STOP_MESSAGE = 'stop'
+    RENDER_MESSAGE = 'render'
+
+    CLIENT_TO_SERVER_BUFFER_LENGTH = 20
+
+    BUFFERED_MESSAGE_DELIMITER = ';'
+
+    @@buffer_client_to_server = true
+    @@client_to_server_buffer = []
 
     def send_to_server(message)
-      to_server.puts(message)
+      # puts "-"*80
+      # puts "send_to_server: #{message}"
+      @@client_to_server_buffer << message
+      # puts "@@client_to_server_buffer: #{@@client_to_server_buffer.inspect}"
+
+      do_not_buffer_client_to_server = !buffer_client_to_server?
+      # puts "\tdo_not_buffer_client_to_server: #{do_not_buffer_client_to_server}"
+      buffer_past_threshold = @@client_to_server_buffer.length >= CLIENT_TO_SERVER_BUFFER_LENGTH
+      # puts "\tbuffer_past_threshold: #{buffer_past_threshold}"
+      is_immediate_send_message = immediate_send_message?(message)
+      # puts "\tis_immediate_send_message: #{is_immediate_send_message}"
+      send_buffer_now = [
+        do_not_buffer_client_to_server,
+        buffer_past_threshold,
+        is_immediate_send_message
+      ].any?
+
+      # puts "send_buffer_now: #{send_buffer_now.inspect}"
+      if send_buffer_now
+        # print "send: #{@@client_to_server_buffer.join(BUFFERED_MESSAGE_DELIMITER).inspect}"
+        to_server.puts @@client_to_server_buffer.join(BUFFERED_MESSAGE_DELIMITER)
+        to_server.flush
+        @@client_to_server_buffer = []
+        # puts " ..sent"
+      end
+    end
+
+    def immediate_send_message?(message)
+      message.split(/\s+/).first != 'led'
     end
 
     def send_to_client(message)
@@ -67,6 +105,10 @@ module Ws2812Simulator
       send_to_server STOP_MESSAGE
     end
 
+    def send_render_to_server!
+      send_to_server RENDER_MESSAGE
+    end
+
     def send_ok_to_client
       send_to_client OK_MESSAGE
     end
@@ -75,6 +117,14 @@ module Ws2812Simulator
       body = ERROR_MESSAGE
       body << " #{message}" if !message.nil?
       send_to_client body
+    end
+
+    def buffer_client_to_server?
+      @@buffer_client_to_server
+    end
+
+    def buffer_client_to_server!(mode = true)
+      @@buffer_client_to_server = !!mode
     end
 
     private

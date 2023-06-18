@@ -48,6 +48,11 @@ module Ws2812Simulator
     attr_accessor :leds_dirty, :update_requested
     attr_reader :window, :leds, :count, :arrangement
 
+    def debug(message)
+      return unless @verbose
+      puts message
+    end
+
     def initialize(count:,
       width: 320, height: 240,
       arrangement: :default, include_labels: false,
@@ -90,58 +95,61 @@ module Ws2812Simulator
 
         received_message_type = nil
         if Communication.message_waiting_from_client?
-          client_message = Communication.read_from_client
-          received_message_type = client_message[0].upcase
+          client_messages = Communication.read_from_client
+          debug "processing: #{client_messages.inspect}"
+          client_messages.split(Communication::BUFFERED_MESSAGE_DELIMITER).each do |client_message|
+            received_message_type = client_message[0].upcase
 
-          verbose_output << "processing #{client_message}"
-          if client_message == START_REQUEST
-            verbose_output << "sending #{STARTED_MESSAGE}"
-            Communication.send_to_client STARTED_MESSAGE
-          elsif client_message =~ /^count/
-            _cmd, new_count = client_message.split(/\s+/)
-            new_count = new_count.to_i
-            verbose_output << "existing count: #{@count.inspect}"
-            if @count != new_count
-              verbose_output << "new led count: #{new_count.inspect}"
-              @count = new_count
+            debug "message: #{client_message.inspect}"
+            if client_message == START_REQUEST
+              debug "sending #{STARTED_MESSAGE}"
+              Communication.send_to_client STARTED_MESSAGE
+            elsif client_message =~ /^count/
+              _cmd, new_count = client_message.split(/\s+/)
+              new_count = new_count.to_i
+              debug "existing count: #{@count.inspect}"
+              if @count != new_count
+                debug "new led count: #{new_count.inspect}"
+                @count = new_count
 
-              reset_leds
-            end
+                reset_leds
+              end
 
-            Communication.send_ok_to_client
+              Communication.send_ok_to_client
 
-          elsif client_message =~ /^arrangement/
-            _cmd, new_arrangement = client_message.split(/\s+/)
-            new_arrangement = new_arrangement.to_sym
-            verbose_output << "existing arrangement: #{@arrangement.inspect}"
-            if @arrangement != new_arrangement
-              verbose_output << "new led arrangement: #{new_arrangement.inspect}"
-              @arrangement = new_arrangement
+            elsif client_message =~ /^arrangement/
+              _cmd, new_arrangement = client_message.split(/\s+/)
+              new_arrangement = new_arrangement.to_sym
+              debug "existing arrangement: #{@arrangement.inspect}"
+              if @arrangement != new_arrangement
+                debug "new led arrangement: #{new_arrangement.inspect}"
+                @arrangement = new_arrangement
 
-              reset_leds
-            end
-            Communication.send_ok_to_client
-          elsif client_message =~ /^led/
-            _cmd, led_index, led_color_int = client_message.split(/\s+/)
-            Communication.send_ok_to_client
-            color = Color.from_i(led_color_int.to_i)
-            @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
-          elsif client_message == Communication::STOP_MESSAGE
-            Communication.send_ok_to_client
-            if @obey_client_stop
-              warn 'Received stop from client, shutting down'
-              @window.close
-              exit 1
+                reset_leds
+              end
+              Communication.send_ok_to_client
+            elsif client_message =~ /^led/
+              _cmd, led_index, led_color_int = client_message.split(/\s+/)
+              Communication.send_ok_to_client
+              color = Color.from_i(led_color_int.to_i)
+              @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
+            elsif client_message == Communication::STOP_MESSAGE
+              Communication.send_ok_to_client
+              if @obey_client_stop
+                warn 'Received stop from client, shutting down'
+                @window.close
+                exit 1
+              else
+                warn 'Received stop from client, but will keep display running'
+              end
+            elsif client_message == Communication::RENDER_MESSAGE
+              Communication.send_ok_to_client
+              update_requested!
             else
-              warn 'Received stop from client, but will keep display running'
+              debug "Error: #{client_message.inspect}"
+              received_message_type = 'E'
+              Communication.send_error_to_client "unknown command #{client_message.inspect}"
             end
-          elsif client_message == 'render'
-            Communication.send_ok_to_client
-            update_requested!
-          else
-            verbose_output << "Error: #{client_message.inspect}"
-            received_message_type = 'E'
-            Communication.send_error_to_client "unknown command #{client_message.inspect}"
           end
         end
 
@@ -149,11 +157,9 @@ module Ws2812Simulator
           update_leds
         end
 
-        if @verbose && verbose_output.length > 0
-          puts verbose_output.join("\n")
-        else
-          print received_message_type || '.'
-        end
+
+        print received_message_type || '.'
+
         @tick += 1
         if @tick >= @count
           @tick = 0

@@ -68,6 +68,9 @@ module Ws2812Simulator
       @per_row = per_row.to_i.positive? ? per_row.to_i : nil
       @per_column = per_column.to_i.positive? ? per_column.to_i : nil
 
+      @led_command_buffer = []
+      @buffer_led_commands = true
+
       @window = Ruby2D::Window.new
 
       # @tick is only here to provide `print` fodder during window.update
@@ -95,7 +98,16 @@ module Ws2812Simulator
 
       window.update do
 
-        verbose_output = []
+        if @buffer_led_commands
+          debug "Pending: #{@led_command_buffer.length}"
+          if (cmd = @led_command_buffer.shift)
+            led_index = cmd.first.to_i
+            led_color_int = cmd.last.to_i
+
+            color = Color.from_i(led_color_int)
+            @leds[led_index].set_color(r: color.r, g: color.g, b: color.b)
+          end
+        end
 
         received_message_type = nil
         if Communication.message_waiting_from_client?
@@ -136,8 +148,12 @@ module Ws2812Simulator
               _cmd, led_index, led_color_int = client_message.split(/\s+/)
               # the 'led' message does not usually expect an ok to be sent because it may be batched
               # Communication.send_ok_to_client
-              color = Color.from_i(led_color_int.to_i)
-              @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
+              if @buffer_led_commands
+                @led_command_buffer << [led_index, led_color_int]
+              else
+                color = Color.from_i(led_color_int.to_i)
+                @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
+              end
             elsif client_message == Communication::STOP_MESSAGE
               Communication.send_ok_to_client
               if @obey_client_stop
@@ -148,6 +164,18 @@ module Ws2812Simulator
                 warn 'Received stop from client, but will keep display running'
               end
             elsif client_message == Communication::RENDER_MESSAGE
+              # clear the buffer
+              if @buffer_led_commands
+                debug "Clearing: #{@led_command_buffer.length}"
+                while (cmd = @led_command_buffer.shift)
+                  led_index = cmd.first.to_i
+                  led_color_int = cmd.last.to_i
+
+                  color = Color.from_i(led_color_int)
+                  @leds[led_index].set_color(r: color.r, g: color.g, b: color.b)
+                end
+              end
+
               Communication.send_ok_to_client
               update_requested!
             else

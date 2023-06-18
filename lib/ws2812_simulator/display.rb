@@ -55,14 +55,18 @@ module Ws2812Simulator
 
     def initialize(count:,
       width: 320, height: 240,
+      per_row: nil, per_column: nil,
       arrangement: :default, include_labels: false,
       verbose: false, obey_client_stop: false)
+
       @count = count
       @update_leds = false
       @arrangement = arrangement
       @include_labels = include_labels
       @verbose = verbose
       @obey_client_stop = obey_client_stop
+      @per_row = per_row.to_i.positive? ? per_row.to_i : nil
+      @per_column = per_column.to_i.positive? ? per_column.to_i : nil
 
       @window = Ruby2D::Window.new
 
@@ -185,8 +189,9 @@ module Ws2812Simulator
     end
 
     def set_leds
-      leds_per_row =  Math.sqrt(count).ceil
-      leds_per_column =  Math.sqrt(count).floor
+      leds_per_row =  @per_row || Math.sqrt(count).ceil
+      leds_per_column =  @per_column || Math.sqrt(count).floor
+
       while (leds_per_row * leds_per_column) < @count
         leds_per_column += 1
       end

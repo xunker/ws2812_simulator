@@ -7,13 +7,21 @@ require 'getoptlong'
 
 opts = GetoptLong.new(
   [ '--count', '-c',  GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--width', '-w',  GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--height', '-h',  GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--per-row', '-R',  GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--per-column', '-C',  GetoptLong::REQUIRED_ARGUMENT ],
   [ '--unicorn-hat', '-U', GetoptLong::NO_ARGUMENT ],
   [ '--include-labels', '-L', GetoptLong::NO_ARGUMENT],
   [ '--verbose', '-V', GetoptLong::NO_ARGUMENT],
-  [ '--help', '-h', GetoptLong::NO_ARGUMENT]
+  [ '--help', '-H', GetoptLong::NO_ARGUMENT]
 )
 
 count = 1
+width = 320
+height = 240
+per_row = nil
+per_column = nil
 arrangement = :default
 include_labels = false
 verbose = false
@@ -35,6 +43,12 @@ ws2811_server [OPTION]
 --unicorn-hat, -U:
    Use "unicorn hat" LED arrangement instead of default linear arrangment
 
+--width, -w:
+   Width of the window in pixels (default: #{width})
+
+--height, -H:
+   height of the window in pixels (default: #{heigth})
+
 --verbose, -V:
    Use "unicorn hat" LED arrangement instead of default linear arrangment
       EOF
@@ -47,7 +61,15 @@ ws2811_server [OPTION]
       verbose = true
     when '--count'
       count = arg.to_i
+    when '--width'
+      width = (arg.to_i.positive? ? arg.to_i : width)
+    when '--height'
+      height = (arg.to_i.positive? ? arg.to_i : height)
+    when '--per-row'
+      per_row = arg.to_i
+    when '--per-column'
+      per_column = arg.to_i
   end
 end
 
-Ws2812Simulator::Display.new(count: count, arrangement: arrangement, include_labels: include_labels, verbose: verbose).show
+Ws2812Simulator::Display.new(count: count, arrangement: arrangement, include_labels: include_labels, width: width, height: height, per_row: per_row, per_column: per_column, verbose: verbose).show

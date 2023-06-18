@@ -130,7 +130,8 @@ module Ws2812Simulator
               Communication.send_ok_to_client
             elsif client_message =~ /^led/
               _cmd, led_index, led_color_int = client_message.split(/\s+/)
-              Communication.send_ok_to_client
+              # the 'led' message does not usually expect an ok to be sent because it may be batched
+              # Communication.send_ok_to_client
               color = Color.from_i(led_color_int.to_i)
               @leds[led_index.to_i].set_color(r: color.r, g: color.g, b: color.b)
             elsif client_message == Communication::STOP_MESSAGE

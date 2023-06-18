@@ -36,30 +36,22 @@ module Ws2812Simulator
     @@client_to_server_buffer = []
 
     def send_to_server(message)
-      # puts "-"*80
-      # puts "send_to_server: #{message}"
       @@client_to_server_buffer << message
-      # puts "@@client_to_server_buffer: #{@@client_to_server_buffer.inspect}"
 
       do_not_buffer_client_to_server = !buffer_client_to_server?
-      # puts "\tdo_not_buffer_client_to_server: #{do_not_buffer_client_to_server}"
       buffer_past_threshold = @@client_to_server_buffer.length >= CLIENT_TO_SERVER_BUFFER_LENGTH
-      # puts "\tbuffer_past_threshold: #{buffer_past_threshold}"
       is_immediate_send_message = immediate_send_message?(message)
-      # puts "\tis_immediate_send_message: #{is_immediate_send_message}"
+
       send_buffer_now = [
         do_not_buffer_client_to_server,
         buffer_past_threshold,
         is_immediate_send_message
       ].any?
 
-      # puts "send_buffer_now: #{send_buffer_now.inspect}"
       if send_buffer_now
-        # print "send: #{@@client_to_server_buffer.join(BUFFERED_MESSAGE_DELIMITER).inspect}"
         to_server.puts @@client_to_server_buffer.join(BUFFERED_MESSAGE_DELIMITER)
         to_server.flush
         @@client_to_server_buffer = []
-        # puts " ..sent"
       end
     end
 
@@ -69,6 +61,7 @@ module Ws2812Simulator
 
     def send_to_client(message)
       to_client.puts(message)
+      to_client.flush
     end
 
     def read_from_server

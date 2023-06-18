@@ -17,15 +17,14 @@ class Ws2812Simulator::Basic
       msg = "led #{index} #{color_int}"
       # puts "send: #{msg}"
       Ws2812Simulator::Communication.send_to_server msg
-      server_message = Ws2812Simulator::Communication.read_from_server
-
-      # puts "response: #{server_message}"
+      # 'led' message does not expect a response from the server because it may be batched
     end
 
     # returns 0 (success) or non-zero (error)
     def ws2811_render(ws2811_t)
       Ws2812Simulator::Communication.send_to_server 'render'
-
+      server_message = Ws2812Simulator::Communication.read_from_server
+      # puts "render response: #{server_message}"
       0 # everything OK
     end
 
